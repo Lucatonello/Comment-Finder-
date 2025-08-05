@@ -17,6 +17,11 @@ A Chrome extension that allows you to search for YouTube video comments containi
 1. Open a YouTube video in your browser.
 2. Click the extension icon to open the popup.
 3. Enter a keyword and click "Search".
+4. The extension fetches up to the first 1000 comments for the video, filters them by your keyword, and displays all matching results at once in a popup overlay on the YouTube page.
+5. If there are more comments available, a "Load more comments" button appears at the end of the results. Clicking this button fetches the next 1000 comments from YouTube, appends any new matches to the results, and updates the display to show all results from both the first and subsequent fetches together. You can repeat this process to load more comments in batches of 1000 until all comments are fetched.
+6. Click the reply count on any comment to fetch and view all replies for that comment.
+2. Click the extension icon to open the popup.
+3. Enter a keyword and click "Search".
 4. The extension fetches all comments for the video, filters them by your keyword, and displays the results as a popup on the YouTube page.
 5. Click the reply count on any comment to fetch and view all replies for that comment.
 
@@ -51,7 +56,6 @@ A Chrome extension that allows you to search for YouTube video comments containi
 
 ## Known Limitations
 - API quota limits apply (YouTube Data API v3).
-- The API key is exposed in the client code (standard for browser extensions, but restrict it in Google Cloud Console).
 
 ## License
 MIT
