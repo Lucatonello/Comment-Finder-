@@ -1,4 +1,4 @@
-function createPopup(comments, keyword, nextPageToken, canLoadMoreFromYouTube, videoId) {
+function createPopup(comments, keyword, nextPageToken, canLoadMoreFromYouTube, videoId, scroll, prevCount) {
     const existing = document.getElementById('yt-comments-popup');
     if (existing) existing.remove();
 
@@ -78,6 +78,24 @@ function createPopup(comments, keyword, nextPageToken, canLoadMoreFromYouTube, v
         setTimeout(() => popup.classList.add('popup-open'), 10);
         return;
     }
+
+    if (scroll === 'buttom') {
+        setTimeout(() => {
+            const list = popup.querySelector('ul');
+            let index = typeof prevCount === 'number' && prevCount > 0 ? prevCount - 1 : list ? list.children.length - 1 : 0;
+            if (list && list.children.length > index && index >= 0) {
+                const target = list.children[index];
+                if (target && typeof target.scrollIntoView === 'function') {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    popup.scrollTop = popup.scrollHeight;
+                }
+            } else {
+                popup.scrollTop = popup.scrollHeight;
+            }
+        }, 50);
+    }
+
     for (const comment of comments) {
         const li = document.createElement('li');
         li.style.marginBottom = '16px';
@@ -368,12 +386,15 @@ function createPopup(comments, keyword, nextPageToken, canLoadMoreFromYouTube, v
                 comments: comments
             }, (response) => {
                 if (response && Array.isArray(response.comments)) {
+                    // Pass current filtered comment count as prevCount
                     createPopup(
                         response.comments,
                         response.keyword,
                         response.nextPageToken,
                         response.canLoadMoreFromYouTube,
-                        response.videoId
+                        response.videoId,
+                        'buttom',
+                        comments.length
                     )
                 }
             });
