@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import './App.css'
 
 const API_KEY = 'AIzaSyDLRX5L3wDTFmKnrBONplr83QgrD1k_VPA'
@@ -11,12 +11,11 @@ function getYouTubeVideoId(url: string): string | null {
 function App() {
   const [keyword, setKeyword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [allFiltered, setAllFiltered] = useState<any[]>([])
-  const [nextToken, setNextToken] = useState<string | null>(null)
 
   const fetchAllComments = async (limit = 1000, startingToken: string | null = null): Promise<{
     comments: any[],
-    nextPageToken: string | null
+    nextPageToken: string | null,
+    videoId: string
   }> => {
     let [tab] = await chrome.tabs.query({ active: true });
     const url = tab?.url;
@@ -57,7 +56,8 @@ function App() {
 
     return {
       comments: fetchedComments,
-      nextPageToken: nextPageToken
+      nextPageToken: nextPageToken,
+      videoId: VIDEO_ID
     };
   };
   
@@ -67,13 +67,11 @@ function App() {
 
     setLoading(true);
 
-    const { comments, nextPageToken } = await fetchAllComments(1000);
+    const { comments, nextPageToken, videoId } = await fetchAllComments(1000);
     const filtered = comments.filter(c =>
       c.text.toLowerCase().includes(keyword.toLowerCase())
     );
 
-    setAllFiltered(filtered);
-    setNextToken(nextPageToken);
     setLoading(false);
 
     let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -82,52 +80,12 @@ function App() {
         type: 'SHOW_COMMENTS_POPUP',
         comments: filtered,
         keyword: keyword,
-        hasMore: false,
-        canLoadMoreFromYouTube: !!nextPageToken
+        nextPageToken: nextPageToken,
+        canLoadMoreFromYouTube: !!nextPageToken,
+        videoId: videoId
       });
     }
   };
-
-  const handleLoadMoreFromYouTube = async () => {
-    if (!nextToken || !keyword) {
-      return
-    };
-
-    setLoading(true);
-    
-    const { comments, nextPageToken } = await fetchAllComments(1000, nextToken);
-    const newFiltered = comments.filter(c =>
-      c.text.toLowerCase().includes(keyword.toLowerCase())
-    );
-
-    const updatedFiltered = [...allFiltered, ...newFiltered];
-    setAllFiltered(updatedFiltered);
-    setNextToken(nextPageToken);
-    setLoading(false);
-
-    let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab.id) {
-      chrome.tabs.sendMessage(tab.id, {
-        type: 'SHOW_COMMENTS_POPUP',
-        comments: updatedFiltered,
-        keyword: keyword,
-        hasMore: false,
-        canLoadMoreFromYouTube: !!nextPageToken
-      });
-    }
-  };
-
-  useEffect(() => {
-    const messageListener = (message: any, _sender: any, _sendResponse: any) => {
-      if (message.type === 'LOAD_MORE_YOUTUBE_COMMENTS') {
-        handleLoadMoreFromYouTube();
-      }
-    };
-    chrome.runtime.onMessage.addListener(messageListener);
-    return () => {
-      chrome.runtime.onMessage.removeListener(messageListener);
-    };
-  }, [allFiltered, keyword, nextToken]);
 
   return (
     <>

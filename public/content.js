@@ -1,4 +1,4 @@
-function createPopup(comments, keyword, hasMore, canLoadMoreFromYouTube) {
+function createPopup(comments, keyword, nextPageToken, canLoadMoreFromYouTube, videoId) {
     const existing = document.getElementById('yt-comments-popup');
     if (existing) existing.remove();
 
@@ -360,7 +360,23 @@ function createPopup(comments, keyword, hasMore, canLoadMoreFromYouTube) {
             loadMoreBtn.style.border = '1px solid #3EA6FF';
         };
         loadMoreBtn.onclick = () => {
-            chrome.runtime.sendMessage({ type: 'LOAD_MORE_YOUTUBE_COMMENTS' });
+            chrome.runtime.sendMessage({ 
+                type: 'LOAD_MORE_YOUTUBE_COMMENTS',
+                nextPageToken: nextPageToken,
+                keyword: keyword,
+                videoId: videoId,
+                comments: comments
+            }, (response) => {
+                if (response && Array.isArray(response.comments)) {
+                    createPopup(
+                        response.comments,
+                        response.keyword,
+                        response.nextPageToken,
+                        response.canLoadMoreFromYouTube,
+                        response.videoId
+                    )
+                }
+            });
         };
         popup.appendChild(loadMoreBtn);
     }
@@ -375,8 +391,9 @@ chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
         createPopup(
             message.comments,
             message.keyword,
-            message.hasMore || false,
-            message.canLoadMoreFromYouTube || false
+            message.nextPageToken,
+            message.canLoadMoreFromYouTube || false,
+            message.videoId
         );
     }
 })
